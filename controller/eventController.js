@@ -5,7 +5,24 @@ const { eventsModel } = require("../models/");
 exports.createEvent = async (req, res) => {
   try {
     const { title, category, venue, date } = req.body;
-    const mediaUrl = req.file ? req.file.path : null;
+    let mediaUrl = null;
+
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "image",
+          },
+          (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      mediaUrl = result.secure_url;
+    }
     const event = await eventsModel.create({
       title,
       date: new Date(date),
